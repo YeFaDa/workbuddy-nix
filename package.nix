@@ -24,6 +24,15 @@
   libsecret,
   libuuid,
   libxkbcommon,
+  libx11,
+  libxcomposite,
+  libxdamage,
+  libxext,
+  libxfixes,
+  libxrandr,
+  libxcb,
+  libxscrnsaver,
+  libxtst,
   mesa,
   nspr,
   nss,
@@ -31,7 +40,6 @@
   systemd,
   util-linux,
   xdg-utils,
-  xorg,
 
   # 额外开关
   commandLineArgs ? "",
@@ -41,13 +49,12 @@
   disableSandbox ? true,
 }:
 
-stdenv.mkDerivation rec {
-  pname = "workbuddy";
-  version = "5.5.3.37748631";
+let
   # deb 文件名中的 build hash，升级时需同步修改
   buildHash = "104760a2";
 
-  # 官方同时提供 x64 与 arm64 的 deb，两个架构的哈希不同
+  # 放在 let 里：mkDerivation 的属性最终都要能序列化成字符串，
+  # 函数塞进属性集会报 "cannot coerce a function to a string"。
   selectSystem = attrs:
     attrs.${stdenv.hostPlatform.system}
       or (throw "workbuddy: ${stdenv.hostPlatform.system} is not supported");
@@ -55,19 +62,23 @@ stdenv.mkDerivation rec {
   source = selectSystem {
     x86_64-linux = {
       arch = "x64";
-      sha256 = "c5db5f269561822c9b0ac16891e73b90056dac4a134369700036deae9277b062";
+      hash = "sha256-xdtfJpVhgiybCsFokec7kAVtrEoTQ2lwADberpJ3sGI=";
     };
     aarch64-linux = {
       arch = "arm64";
-      sha256 = "a0ca12999238a9f4149998447516d9be5570a7f55c7ac0b540c35a3ec83d7821";
+      hash = "sha256-oMoSmZI4qfQUmZhEdRbZvlVwp/VcesC1QMNaPsg9eCE=";
     };
   };
+in
+stdenv.mkDerivation (finalAttrs: {
+  pname = "workbuddy";
+  version = "5.5.3.37748631";
 
   src = fetchurl {
-    url = "https://download.codebuddy.cn/workbuddy/saas/linux-${source.arch}-deb/WorkBuddy-linux-${source.arch}-deb-${version}-${buildHash}.deb";
+    url = "https://download.codebuddy.cn/workbuddy/saas/linux-${source.arch}-deb/WorkBuddy-linux-${source.arch}-deb-${finalAttrs.version}-${buildHash}.deb";
     # 实测哈希。官方 /v2/update 接口返回的 sha256hash 与 CDN 实际文件不符
     # （x64、arm64 都不一致），不要直接填接口给的值。
-    sha256 = source.sha256;
+    hash = source.hash;
   };
 
   nativeBuildInputs = [
@@ -93,20 +104,21 @@ stdenv.mkDerivation rec {
     libsecret
     libuuid
     libxkbcommon
+    libx11
+    libxcomposite
+    libxdamage
+    libxext
+    libxfixes
+    libxrandr
+    libxcb
+    libxscrnsaver
+    libxtst
     mesa
     nspr
     nss
     pango
     util-linux
-    xorg.libX11
-    xorg.libXcomposite
-    xorg.libXdamage
-    xorg.libXext
-    xorg.libXfixes
-    xorg.libXrandr
-    xorg.libxcb
-    xorg.libXScrnSaver
-    xorg.libXtst
+    xdg-utils
   ];
 
   # 内置 node/python 运行时等 .so 依赖未必都在 nixpkgs 中，缺了不应让构建失败
@@ -142,8 +154,8 @@ stdenv.mkDerivation rec {
           libGL
           libuuid
           libsecret
-          xorg.libXScrnSaver
-          xorg.libXtst
+          libxscrnsaver
+          libxtst
         ]
       }" \
       --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform=wayland --enable-features=WaylandWindowDecorations --enable-wayland-ime=true --wayland-text-input-version=3}}" \
@@ -165,4 +177,4 @@ stdenv.mkDerivation rec {
     ];
     mainProgram = "workbuddy";
   };
-}
+})
