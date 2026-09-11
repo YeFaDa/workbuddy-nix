@@ -1,6 +1,6 @@
 # WorkBuddy Nix 打包
 
-由官方 deb（`WorkBuddy-linux-x64-deb-5.5.4.38151288-1ca4889a.deb`）打包。
+由官方 deb（`WorkBuddy-linux-x64-deb-5.5.6.38337834-5f969292.deb`）打包。
 
 打包范式参考两处：
 
@@ -132,8 +132,8 @@ workbuddy.override { keepBundledRuntime = true; }
 改 `package.nix` 里这些值：
 
 ```nix
-version   = "5.5.4.38151288";       # 新版本号
-buildHash = "1ca4889a";             # deb 文件名里的 build hash
+version   = "5.5.6.38337834";       # 新版本号
+buildHash = "5f969292";             # deb 文件名里的 build hash
 # source.x86_64-linux.hash / source.aarch64-linux.hash  两个架构各自的哈希
 ```
 
@@ -192,7 +192,7 @@ environment.sessionVariables.NIXOS_OZONE_WL = "1";
    用 `nix-prefetch-url` 重取即可。
 2. **自动更新**：Linux 版 WorkBuddy 检测到新版本只跳转官网/应用商店，不自行下载安装，
    所以 Nix 包不会自我覆盖——这是好事，版本完全由 nix 控制。
-3. **构建体量**：deb 429 MB，输出 819 MB（`app.asar.unpacked` 占了绝大部分）。
+3. **构建体量**：deb 409 MB，输出 819 MB（`app.asar.unpacked` 占了绝大部分）。
    `autoPatchelf` 会处理其中几十个 ELF，首次构建较慢。已设
    `autoPatchelfIgnoreMissingDeps = true` 避免个别 .so 缺依赖导致构建失败。
    还能再挤约 101 MB（darwin 37 MB + win32 49 MB + musl 3 MB + 零散 12 MB），

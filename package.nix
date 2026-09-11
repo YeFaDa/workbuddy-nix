@@ -57,7 +57,7 @@
 
 let
   # deb 文件名中的 build hash，升级时需同步修改
-  buildHash = "1ca4889a";
+  buildHash = "5f969292";
 
   # 放在 let 里：mkDerivation 的属性最终都要能序列化成字符串，
   # 函数塞进属性集会报 "cannot coerce a function to a string"。
@@ -68,11 +68,11 @@ let
   source = selectSystem {
     x86_64-linux = {
       arch = "x64";
-      hash = "sha256-A9dWslnXCGwiCY+gd1iaAy1glI0d5zE0czYO7+EeJA8=";
+      hash = "sha256-LvG8ohfSnZwrqYjIIHmqbqAHfp8f+ILGq13XmYvd9yE=";
     };
     aarch64-linux = {
       arch = "arm64";
-      hash = "sha256-n/gbWeBBKlHAT23BGJ/9kuTdHJtMwNCym4xxEVlQXIc=";
+      hash = "sha256-DWjogT1OqWms7T+mgSSmAjrXVtc+jLe+TxlayC1Buw8=";
     };
   };
 
@@ -85,7 +85,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "workbuddy";
-  version = "5.5.4.38151288";
+  version = "5.5.6.38337834";
 
   src = fetchurl {
     url = "https://download.codebuddy.cn/workbuddy/saas/linux-${source.arch}-deb/WorkBuddy-linux-${source.arch}-deb-${finalAttrs.version}-${buildHash}.deb";
@@ -135,7 +135,8 @@ stdenv.mkDerivation (finalAttrs: {
     xdg-utils
   ];
 
-  # 内置 node/python 运行时等 .so 依赖未必都在 nixpkgs 中，缺了不应让构建失败
+  # 跨平台预编译产物（koffi 的 openbsd/musl 变体等）依赖别的平台的库，
+  # autoPatchelf 扫到会失败，直接全部忽略
   autoPatchelfIgnoreMissingDeps = true;
 
   runtimeDependencies = map lib.getLib [
@@ -302,6 +303,7 @@ PYEOF
     makeWrapper ${lib.getExe electron} $out/bin/workbuddy \
       --argv0 "workbuddy" \
       --prefix XDG_DATA_DIRS : "$GSETTINGS_SCHEMAS_PATH" \
+      --prefix PATH : "${lib.makeBinPath [ xdg-utils ]}" \
       --prefix LD_LIBRARY_PATH : "${
         lib.makeLibraryPath [
           libGL
